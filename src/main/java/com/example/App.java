@@ -20,35 +20,16 @@ import java.util.Scanner;
  */
 public class App 
 {
-    /*private static void sendFile(PrintWriter out, String path){
-        try{
-            File myObj = new File("."+path);
-            Scanner myReader = new Scanner(myObj);
-            
-            out.println("HTTP/1.1 200 OK");
-            out.println("Content-Length: " + myObj.length());
-            out.println("Server: Java HTTP Server from Taiti: 1.0");
-            out.println("Date: " + new Date());
-            out.println("Content-Type: text/html; charset=utf-8");
 
-            out.println();
+    private static void sendBinaryFile(Socket socket, String path){
 
-            while (myReader.hasNextLine()) {
-                String data = myReader.nextLine();
-                out.println(data);
-                System.out.println(data);
-            }
-            myReader.close();
-
-        }catch (FileNotFoundException e) {
-            out.println("HTTP/1.1 404 NOT FOUND");      
+        if(path.endsWith("/")){
+            path = path + "index.html";
         }
-    }*/
 
-    private static void sendBinaryFile(Socket socket, String path) {
-        
         try{
-            File file = new File("." + path);
+
+            File file = new File("./root" + path);
             InputStream in = new FileInputStream(file);
             
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -57,7 +38,7 @@ public class App
             out.writeBytes("Content-Length: " + file.length()+ "\n");
             out.writeBytes("Server: Java HTTP Server from Taiti: 1.0\n");
             out.writeBytes("Date: " + new Date()+ "\n");
-            out.writeBytes("Content-Type: " + getContentType(path) );
+            out.writeBytes("Content-Type: " + getContentType(path) + "\n");
             out.writeBytes("\n");
 
             byte[] buf = new byte[8192];
@@ -68,37 +49,46 @@ public class App
             } 
             out.close();
             in.close();
-        }
-        catch(Exception e){
+        }catch(FileNotFoundException ntF){
             try{
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                out.writeBytes("HTTP/1.1 404 Not found\n");
-            }catch(Exception ex){
+                if(getContentType(path).equals("text/plain charset=utf-8\n")){
+                    out.writeBytes("HTTP/1.1 301 Move Permanently\n" );
+                    out.writeBytes("location: " + path+"/");
+                }
+                else
+                    out.writeBytes("HTTP/1.1 404 not found");
 
+            }catch(IOException e){
+                System.out.println("IOexception");
             }
+        }catch(IOException e){
+            System.out.println("IOexception");
         }
            
     }
 
     private static String getContentType(String path){
-        String type = path.split("\\.")[1];
-        switch (type) {
-            case "html":
-                type = "text/" + type+ "; charset=utf-8\n";
-                break;
-            case "jpg":
-            case "png":
-            case "jpeg": 
-                type = "image/" + type;
-                break;
-            case "css":
-                type = "style/" + type;
-                break;
-            case "js":    
-                type = "application/" + type;
-            default:
-                type = "text"+ "; charset=utf-8\n";
-                break;
+        String type = "text/plain charset=utf-8\n";
+        try{
+            type = path.split("\\.")[1];
+            System.out.println("----------------------- "+ type);
+            switch (type) {
+                case "html":
+                case "css":
+                    type = "text/" + type+ "; charset=utf-8\n";
+                    break;
+                case "jpg":
+                case "png":
+                case "jpeg": 
+                    type = "image/" + type;
+                    break;
+                case "js":    
+                    type = "application/" + type;
+                    break;
+            }
+        }catch(IndexOutOfBoundsException inxU){
+            System.out.println(type);
         }
         return type;
     }
@@ -116,9 +106,12 @@ public class App
                 String richiesta = "";
 
                 richiesta = in.readLine();
+                System.out.println(richiesta);
                 String[] riga = richiesta.split(" ");
                 String path = riga[1];
-                path = "/root"+ path;
+                
+                
+                
                 System.out.println("--" + path + "--");
 
                 do{
@@ -127,13 +120,8 @@ public class App
                     if(richiesta.isEmpty() || richiesta.equals(null)) break;
                 }while(true);
 
-
-                try{
-                    sendBinaryFile(client, path);
-                }
-                catch(Exception e){
-                    out.println("HTTP/1.1 404 not found");
-                }
+                sendBinaryFile(client, path);
+                
                 out.flush();
                 client.close();
             }          
@@ -143,4 +131,5 @@ public class App
             e.printStackTrace();
         }
     }
+
 }
