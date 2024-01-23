@@ -13,6 +13,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
 import java.util.Scanner;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+
+import main.java.com.example.Classe;
 
 /**
  * Hello world!
@@ -21,11 +26,26 @@ import java.util.Scanner;
 public class App 
 {
 
+    private static void creaClasse(){
+        ObjectMapper objectmapper= new ObjectMapper();
+        Alunno a1= new Alunno("alessio","aldinucci","5dia");
+        Alunno a2= new Alunno("alessandro","Scrobobebons","5dia");
+
+        Classe classe=new classe();
+        classe.registro.add(a1);
+        classe.registro.add(a2);
+
+        objectmapper.writeValue(new File("/root/classe.json"), classe);
+    }
+
     private static void sendBinaryFile(Socket socket, String path){
 
         if(path.endsWith("/")){
             path = path + "index.html";
-        }
+        } if(path.equals("classe.json")){
+            creaClasse();
+        } 
+
 
         try{
 
@@ -86,6 +106,8 @@ public class App
                 case "js":    
                     type = "application/" + type;
                     break;
+                case "json":
+                    type = "application/" + type;
             }
         }catch(IndexOutOfBoundsException inxU){
             System.out.println(type);
